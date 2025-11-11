@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgriToken - Invest in Real Farms</title>
+  
+  <!-- Ethers.js v6 -->
+  <script src="https://unpkg.com/ethers@6.13.1/dist/ethers.umd.min.js"></script>
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+    }
+    
+    h1 {
+      font-size: 3em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .subtitle {
+      font-size: 1.2em;
+      opacity: 0.9;
+    }
+    
+    #connectBtn {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      border-radius: 50px;
+      font-size: 1.1em;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+      transition: all 0.3s ease;
+      margin: 20px 0;
+    }
+    
+    #connectBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+    }
+    
+    #connectBtn:disabled {
+      background: #6b7280;
+      cursor: not-allowed;
+    }
+    
+    .assets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+      margin: 30px 0;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
+    
+    .card:hover::before {
+      transform: scaleX(1);
+    }
+    
+    .card.selected {
+      border: 3px solid #10b981;
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    }
+    
+    .card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .card h3 {
+      font-size: 1.5em;
+      margin-bottom: 10px;
+      color: #1f2937;
+    }
+    
+    .card-info {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 0;
+      color: #6b7280;
+      font-size: 0.95em;
+    }
+    
+    .price-tag {
+      background: #10b981;
+      color: white;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-weight: bold;
+      display: inline-block;
+      margin-top: 10px;
+    }
+    
+    .stats {
+      background: #f3f4f6;
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+    
+    #purchase {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 500px;
+      margin: 30px auto;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      display: none;
+    }
+    
+    #purchase h3 {
+      font-size: 1.8em;
+      margin-bottom: 20px;
+      color: #1f2937;
+      text-align: center;
+    }
+    
+    .form-group {
+      margin: 20px 0;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #4b5563;
+      font-weight: 600;
+    }
+    
+    input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 1.1em;
+      transition: border 0.3s ease;
+    }
+    
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #10b981;
+    }
+    
+    .total-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      margin: 20px 0;
+    }
+    
+    .total-box .label {
+      font-size: 0.9em;
+      opacity: 0.9;
+    }
+    
+    .total-box .amount {
+      font-size: 2em;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+    
+    #buyBtn {
+      width: 100%;
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 18px;
+      border-radius: 12px;
+      font-size: 1.2em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    }
+    
+    #buyBtn:hover {
+      background: #059669;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+    }
+    
+    #buyBtn:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .success-msg {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+      text-align: center;
+      font-weight: 600;
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .network-warning {
+      background: #fef3c7;
+      color: #92400e;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 20px 0;
+      text-align: center;
+      font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
+      h1 { font-size: 2em; }
+      .assets-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🌾 AgriToken</h1>
+      <p class="subtitle">Invest in Real Farms via NFTs</p>
+      <p class="subtitle">RWA | Fractional Ownership | Blockchain Transparency | Real Yields</p>
+    </header>
+
+    <div style="text-align: center;">
+      <button id="connectBtn">🦊 Connect MetaMask</button>
+      <div id="networkWarning" class="network-warning" style="display: none;">
+        ⚠️ Please switch to Base Sepolia network
+      </div>
+    </div>
+
+    <div class="assets-grid" id="assetsGrid">
+      <!-- Assets will be loaded dynamically -->
+    </div>
+
+    <div id="purchase">
+      <h3 id="assetName">Select Asset</h3>
+      
+      <div class="form-group">
+        <label>Number of Parts:</label>
+        <input type="number" id="numParts" min="1" max="100" value="1">
+      </div>
+      
+      <div class="card-info">
+        <span>Price per part:</span>
+        <strong id="pricePerPart">0 ETH</strong>
+      </div>
+      
+      <div class="card-info">
+        <span>Available parts:</span>
+        <strong id="remainingParts">0</strong>
+      </div>
+      
+      <div class="total-box">
+        <div class="label">Total Investment</div>
+        <div class="amount" id="totalCost">0 ETH</div>
+      </div>
+      
+      <button id="buyBtn">🚀 Buy & Mint NFT</button>
+      
+      <p style="text-align: center; color: #6b7280; margin-top: 15px; font-size: 0.9em;">
+        NFTs will appear in your wallet. You're funding real agricultural projects!
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // ════════════════════════════════════════
+    // 🔧 CONFIGURATION
+    // ════════════════════════════════════════
+    
+    const CONTRACT_ADDRESS = '0xc04c44C98a539e1358EEd3B47505e2054D709dFa';
+    const CHAIN_ID = 84532; // Base Sepolia
+    const CHAIN_ID_HEX = '0x14A34'; // ✅ FIX: Correct hex
+    
+    // ABI for ERC1155 contract
+    const ABI = [
+      "function buyAndMint(uint256 assetId, uint256 numParts) payable",
+      "function getAsset(uint256 assetId) view returns (tuple(string name, uint256 pricePerPartWei, uint256 maxParts, uint256 soldParts, bool active))",
+      "function getRemainingParts(uint256 assetId) view returns (uint256)",
+      "function assetCount() view returns (uint256)",
+      "event AssetBought(address indexed buyer, uint256 indexed assetId, uint256 numParts, uint256 totalPaid)"
+    ];
+    
+    // Assets configuration
+    const ASSETS_CONFIG = [
+      {
+        id: 1,
+        name: 'Apple Orchard Share',
+        image: 'https://crimson-real-guan-930.mypinata.cloud/ipfs/bafybeibzh3p2edaznpke6yykvck2u2kvf3looav2uprhvhifxqocmkxriq',
+        description: 'Premium Normandy apple orchards with 8-12% expected yield'
+      },
+      {
+        id: 2,
+        name: 'Strawberry Greenhouse Share',
+        image: 'https://crimson-real-guan-930.mypinata.cloud/ipfs/bafybeifo36zudq2tpyf47pwpe2pffmgrggrkcoo3qp7prxopp75oyaff7e',
+        description: 'High-tech vertical strawberry farming with 15-20% yield'
+      },
+      {
+        id: 3,
+        name: 'Agricultural Warehouse Share',
+        image: 'https://crimson-real-guan-930.mypinata.cloud/ipfs/bafkreiepgzrrwhu3fkblwddhlnjqr4dfft577xraup5j5cjibwijtnadpe',
+        description: 'Next-gen storage facility in Honfleur with IoT monitoring'
+      }
+    ];
+    
+    // ════════════════════════════════════════
+    // 🌐 STATE
+    // ════════════════════════════════════════
+    
+    let provider = null;
+    let signer = null;
+    let contract = null;
+    let userAddress = null;
+    let selectedAssetId = null;
+    let assetsData = {};
+    
+    // ════════════════════════════════════════
+    // 🚀 INITIALIZATION
+    // ════════════════════════════════════════
+    
+    document.addEventListener('DOMContentLoaded', async () => {
+      setupEventListeners();
+      await checkConnection();
+    });
+    
+    function setupEventListeners() {
+      document.getElementById('connectBtn').addEventListener('click', connectWallet);
+      document.getElementById('buyBtn').addEventListener('click', buyParts);
+      document.getElementById('numParts').addEventListener('input', updateTotal);
+    }
+    
+    // ════════════════════════════════════════
+    // 🦊 WALLET CONNECTION
+    // ════════════════════════════════════════
+    
+    async function checkConnection() {
+      if (!window.ethereum) return;
+      
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts.length > 0) {
+        await connectWallet();
+      }
+    }
+    
+    async function connectWallet() {
+      if (!window.ethereum) {
+        alert('❌ MetaMask not detected! Please install MetaMask extension.');
+        window.open('https://metamask.io/download/', '_blank');
+        return;
+      }
+      
+      try {
+        // Request account access
+        const accounts = await window.ethereum.request({ 
+          method: 'eth_requestAccounts' 
+        });
+        userAddress = accounts[0];
+        
+        // Setup ethers.js provider
+        provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+        
+        // Check network
+        const network = await provider.getNetwork();
+        const chainId = Number(network.chainId);
+        
+        if (chainId !== CHAIN_ID) {
+          document.getElementById('networkWarning').style.display = 'block';
+          await switchNetwork();
+        } else {
+          document.getElementById('networkWarning').style.display = 'none';
+        }
+        
+        // Update UI
+        const btn = document.getElementById('connectBtn');
+        btn.textContent = `✅ ${userAddress.slice(0,6)}...${userAddress.slice(-4)}`;
+        btn.style.background = '#10b981';
+        btn.disabled = true;
+        
+        // Load assets
+        await loadAssets();
+        
+        console.log('✅ Connected:', userAddress);
+        
+      } catch (error) {
+        console.error('Connection error:', error);
+        alert('❌ Connection failed: ' + error.message);
+      }
+    }
+    
+    async function switchNetwork() {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: CHAIN_ID_HEX }]
+        });
+        document.getElementById('networkWarning').style.display = 'none';
+      } catch (switchError) {
+        // Network not added, let's add it
+        if (switchError.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: CHAIN_ID_HEX,
+                chainName: 'Base Sepolia',
+                nativeCurrency: {
+                  name: 'Ether',
+                  symbol: 'ETH',
+                  decimals: 18
+                },
+                rpcUrls: ['https://sepolia.base.org'],
+                blockExplorerUrls: ['https://sepolia.basescan.org']
+              }]
+            });
+            document.getElementById('networkWarning').style.display = 'none';
+          } catch (addError) {
+            console.error('Failed to add network:', addError);
+          }
+        } else {
+          console.error('Failed to switch network:', switchError);
+        }
+      }
+    }
+    
+    // ════════════════════════════════════════
+    // 📊 LOAD ASSETS DATA
+    // ════════════════════════════════════════
+    
+    async function loadAssets() {
+      const grid = document.getElementById('assetsGrid');
+      grid.innerHTML = '';
+      
+      try {
+        const assetCount = await contract.assetCount();
+        
+        for (let i = 1; i <= Number(assetCount); i++) {
+          const assetData = await contract.getAsset(i);
+          const remaining = await contract.getRemainingParts(i);
+          
+          assetsData[i] = {
+            name: assetData[0],
+            pricePerPartWei: assetData[1],
+            maxParts: Number(assetData[2]),
+            soldParts: Number(assetData[3]),
+            active: assetData[4],
+            remaining: Number(remaining)
+          };
+          
+          // Get config info
+          const config = ASSETS_CONFIG.find(a => a.id === i) || {};
+          
+          // Create card
+          const card = createAssetCard(i, assetsData[i], config);
+          grid.appendChild(card);
+        }
+        
+      } catch (error) {
+        console.error('Error loading assets:', error);
+        grid.innerHTML = '<p style="color: white; text-align: center;">❌ Error loading assets. Check contract address.</p>';
+      }
+    }
+    
+    function createAssetCard(id, data, config) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.assetId = id;
+      
+      const priceEth = ethers.formatEther(data.pricePerPartWei);
+      const soldPercent = ((data.soldParts / data.maxParts) * 100).toFixed(1);
+      
+      card.innerHTML = `
+        <img src="${config.image || 'https://via.placeholder.com/400x200?text=Asset+' + id}" 
+             alt="${data.name}">
+        <h3>${data.name}</h3>
+        <p style="color: #6b7280; margin: 10px 0;">${config.description || ''}</p>
+        <div class="stats">
+          <div class="card-info">
+            <span>Sold:</span>
+            <strong>${data.soldParts.toLocaleString()} / ${data.maxParts.toLocaleString()}</strong>
+          </div>
+          <div style="background: #e5e7eb; height: 8px; border-radius: 4px; margin: 8px 0;">
+            <div style="background: #10b981; height: 100%; width: ${soldPercent}%; border-radius: 4px;"></div>
+          </div>
+        </div>
+        <div class="price-tag">💎 ${priceEth} ETH/part</div>
+      `;
+      
+      card.addEventListener('click', () => selectAsset(id));
+      
+      return card;
+    }
+    
+    // ════════════════════════════════════════
+    // 🎯 ASSET SELECTION
+    // ════════════════════════════════════════
+    
+    function selectAsset(assetId) {
+      if (!userAddress) {
+        alert('❌ Please connect your wallet first!');
+        return;
+      }
+      
+      // Update selected state
+      document.querySelectorAll('.card').forEach(card => {
+        card.classList.toggle('selected', 
+          Number(card.dataset.assetId) === assetId
+        );
+      });
+      
+      selectedAssetId = assetId;
+      const asset = assetsData[assetId];
+      
+      // Update purchase panel
+      document.getElementById('purchase').style.display = 'block';
+      document.getElementById('assetName').textContent = asset.name;
+      document.getElementById('pricePerPart').textContent = 
+        ethers.formatEther(asset.pricePerPartWei) + ' ETH';
+      document.getElementById('remainingParts').textContent = 
+        asset.remaining.toLocaleString();
+      
+      updateTotal();
+      
+      // Scroll to purchase panel
+      document.getElementById('purchase').scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+    }
+    
+    function updateTotal() {
+      if (!selectedAssetId) return;
+      
+      const numParts = parseInt(document.getElementById('numParts').value) || 1;
+      const asset = assetsData[selectedAssetId];
+      const totalWei = asset.pricePerPartWei * BigInt(numParts);
+      const totalEth = ethers.formatEther(totalWei);
+      
+      document.getElementById('totalCost').textContent = totalEth + ' ETH';
+    }
+    
+    // ════════════════════════════════════════
+    // 💰 BUY FUNCTION
+    // ════════════════════════════════════════
+    
+    async function buyParts() {
+      if (!selectedAssetId || !contract) {
+        alert('❌ Please select an asset and connect wallet!');
+        return;
+      }
+      
+      const numParts = parseInt(document.getElementById('numParts').value) || 1;
+      const asset = assetsData[selectedAssetId];
+      
+      if (numParts > asset.remaining) {
+        alert(`❌ Only ${asset.remaining} parts available!`);
+        return;
+      }
+      
+      const totalWei = asset.pricePerPartWei * BigInt(numParts);
+      const btn = document.getElementById('buyBtn');
+      
+      try {
+        // Disable button
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading"></span> Processing...';
+        
+        // Call smart contract
+        console.log('Buying:', numParts, 'parts of asset', selectedAssetId);
+        console.log('Total cost:', ethers.formatEther(totalWei), 'ETH');
+        
+        const tx = await contract.buyAndMint(selectedAssetId, numParts, {
+          value: totalWei
+        });
+        
+        btn.innerHTML = '<span class="loading"></span> Waiting for confirmation...';
+        
+        // Wait for transaction confirmation
+        const receipt = await tx.wait();
+        
+        console.log('✅ Transaction confirmed:', receipt.hash);
+        
+        // Show success
+        btn.innerHTML = '✅ Success!';
+        btn.style.background = '#10b981';
+        
+        alert(`🎉 SUCCESS!\n\n${numParts} parts minted!\n\nTransaction: ${receipt.hash.slice(0,10)}...`);
+        
+        // Reload assets data
+        await loadAssets();
+        
+        // Reset form after 3 seconds
+        setTimeout(() => {
+          btn.innerHTML = '🚀 Buy & Mint NFT';
+          btn.disabled = false;
+          document.getElementById('numParts').value = 1;
+          updateTotal();
+        }, 3000);
+        
+      } catch (error) {
+        console.error('Transaction error:', error);
+        
+        let errorMsg = 'Transaction failed!';
+        if (error.code === 'ACTION_REJECTED') {
+          errorMsg = 'Transaction rejected by user';
+        } else if (error.message.includes('insufficient funds')) {
+          errorMsg = 'Insufficient ETH balance';
+        } else {
+          errorMsg = error.message || errorMsg;
+        }
+        
+        alert('❌ ' + errorMsg);
+        
+        btn.innerHTML = '🚀 Buy & Mint NFT';
+        btn.disabled = false;
+      }
+    }
+    
+    // ════════════════════════════════════════
+    // 🔄 AUTO-REFRESH ON NETWORK CHANGE
+    // ════════════════════════════════════════
+    
+    if (window.ethereum) {
+      window.ethereum.on('chainChanged', () => {
+        window.location.reload();
+      });
+      
+      window.ethereum.on('accountsChanged', (accounts) => {
+        if (accounts.length > 0) {
+          window.location.reload();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
